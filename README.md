@@ -1,35 +1,47 @@
-# Token-Curated Registry
+# Token Curated Register with delegated voting
+A token curated register forked from https://github.com/skmgoldin/tcr with the additional ability to perform delegation call.
 
-[ ![Codeship Status for skmgoldin/tcr](https://app.codeship.com/projects/b140cce0-ac77-0135-0738-52e8b96e2dec/status?branch=master)](https://app.codeship.com/projects/257003)
+# Background
 
-A hash-keyed [token-curated registry (TCR)](https://medium.com/@ilovebagels/token-curated-registries-1-0-61a232f8dac7). [Owner's Manual available](https://github.com/skmgoldin/tcr/blob/master/owners_manual.md).
+ERC20
 
-Mainnet factory: [0x74bd1d07a158e8a9eecfbd2267766f5919e2b21c](https://etherscan.io/address/0x74bd1d07a158e8a9eecfbd2267766f5919e2b21c#code)
+* https://github.com/ethereum/EIPs/blob/master/EIPS/eip-20.md
+* https://theethereum.wiki/w/index.php/ERC20_Token_Standard
 
-Rinkeby factory: [0x2bddfc0c506a00ea3a6ccea5fbbda8843377dcb1](https://rinkeby.etherscan.io/address/0x2bddfc0c506a00ea3a6ccea5fbbda8843377dcb1#code)
+PLCRVoting
 
-EPM: [tcr](https://www.ethpm.com/registry/packages/44)
+* https://github.com/ConsenSys/PLCRVoting
 
-## Initialize
-The only environmental dependency you need is Node. Presently we can guarantee this all works with Node 8.
-```
-npm install
-npm run compile
-```
+SafeMath
+* https://github.com/OpenZeppelin/openzeppelin-solidity/blob/master/contracts/math/SafeMath.sol
 
-## Tests
-The repo has a comprehensive test suite. You can run it with `npm run test`. To run the tests with the RPC logs, use `npm run test gas`.
+Proxy
+* https://blog.zeppelinos.org/proxy-patterns/
 
-## Composition of the repo
-The repo is composed as a Truffle project, and is largely idiomatic to Truffle's conventions. The tests are in the `test` directory, the contracts are in the `contracts` directory and the migrations (deployment scripts) are in the `migrations` directory. Furthermore there is a `conf` directory containing json files where deployments can be parameterized.
+# Features
+* Same features guarrenteed from https://github.com/skmgoldin/tcr
+* users should be able to assign someone else to vote for themselves
 
-## Deploying your own TCR
-Since [v1.1.0](https://github.com/skmgoldin/tcr/releases/tag/v1.1.0), only the factory contracts are deployed during `truffle migrate`. To deploy a RegistryFactory to any network you can use the NPM scripts in the `package.json`. To deploy to a local Ganache instance, set an environment variable `MNEMONIC` to the mnemonic exposed by Ganache. To spawn proxy contracts using a deployed RegistryFactory, execute the snippet in [/scripts](./scripts) by running:
+# Environment
+* Solidity 0.4.24
+* Python 2.7
+* Ganache CLI v6.1.8 (ganache-core: 2.2.1)
+* Truffle v4.1.14
 
-```
-npm run deploy-proxies:[network]
-```
+# Testing
+First cmd prompt
+* vagrant up
+* vagrant ssh
+* ganache-cli
 
-## Packages
-The repo consumes several EPM packages. `dll` and `attrstore` are libraries used in PLCRVoting's doubly-linked list abstraction. `tokens` provides an ERC20-comaptible token implementation. `plcr-revival` features batched executions for some transactions. All packages are installed automatically when running `npm install`.
+Second cmd prompt
+* vagrant up
+* vagrant ssh
+* cd TokenCuratedRegistry/
+* ../../node_modules/.bin/solidity-coverage
 
+# Test Coverage
+100% branch, 100% line
+
+# Deployment
+Please follow web3 documentation at: https://web3js.readthedocs.io/en/1.0/web3-eth-contract.html#deploy
