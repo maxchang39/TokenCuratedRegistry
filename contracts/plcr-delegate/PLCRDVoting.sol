@@ -5,10 +5,10 @@ import "../attrstore/AttributeStore.sol";
 import "../zeppelin/math/SafeMath.sol";
 
 /**
-@title Partial-Lock-Commit-Reveal Voting scheme with ERC20 tokens
-@author Team: Aspyn Palatnick, Cem Ozer, Yorke Rhodes
+@title Partial-Lock-Commit-Reveal Voting scheme with delegate voting, forcked from the original plcr voting
+@author :Xiaosui Zhang
 */
-contract PLCRVoting {
+contract PLCRDVoting {
 
     // ============
     // EVENTS:
@@ -20,6 +20,7 @@ contract PLCRVoting {
     event _VotingRightsGranted(uint numTokens, address indexed voter);
     event _VotingRightsWithdrawn(uint numTokens, address indexed voter);
     event _TokensRescued(uint indexed pollID, address indexed voter);
+	event _TokensApproved(address indexed tokenOwner, address indexed voter, uint numTokens, uint indexed pollID);
 
     // ============
     // DATA STRUCTURES:
@@ -49,7 +50,7 @@ contract PLCRVoting {
 
     mapping(uint => Poll) public pollMap; // maps pollID to Poll struct
     mapping(address => uint) public voteTokenBalance; // maps user's address to voteToken balance
-
+    mapping(address => mapping(address => mapping(uint => uint))) tokenAllowed;
     mapping(address => DLL.Data) dllMap;
     AttributeStore.Data store;
 
@@ -80,6 +81,16 @@ contract PLCRVoting {
         voteTokenBalance[msg.sender] += _numTokens;
         require(token.transferFrom(msg.sender, this, _numTokens));
         emit _VotingRightsGranted(_numTokens, msg.sender);
+    }
+	
+	function requestVotingRightsFrom(address _from, uint _numTokens, uint _pollID) public {
+		require(tokenAllowed[_from][msg.sender][_pollID] >= _numTokens);
+		require(token.balanceOf(_from) >= _numTokens);
+		
+        voteTokenBalance[_from] = voteTokenBalance[_from].add(_numTokens);
+		
+        require(token.transferFrom(_from, this, _numTokens));
+        emit _VotingRightsGranted(_numTokens, _from);
     }
 
     /**
@@ -116,7 +127,7 @@ contract PLCRVoting {
             rescueTokens(_pollIDs[i]);
         }
     }
-
+	
     // =================
     // VOTING INTERFACE:
     // =================
@@ -166,6 +177,59 @@ contract PLCRVoting {
         pollMap[_pollID].didCommit[msg.sender] = true;
         emit _VoteCommitted(_pollID, _numTokens, msg.sender);
     }
+	
+	    /**
+    @notice Commits vote on behalf of the original voter using hash of choice and secret salt to conceal vote until reveal
+    @param _pollID Integer identifier associated with target poll
+	@param _from the delegated voter
+    @param _secretHash Commit keccak256 hash of voter's choice and salt (tightly packed in this order)
+    @param _numTokens The number of tokens to be committed towards the target poll
+    @param _prevPollID The ID of the poll that the user has voted the maximum number of tokens in which is still less than or equal to numTokens
+    */
+    function commitVoteFrom(uint _pollID, address _from, bytes32 _secretHash, uint _numTokens, uint _prevPollID) public {
+        require(commitPeriodActive(_pollID));
+		require(tokenAllowed[_from][msg.sender][_pollID] >= _numTokens);
+
+        // if _from doesn't have enough voting rights,
+        // request for enough voting rights
+        if (voteTokenBalance[_from] < _numTokens) {
+            uint remainder = _numTokens.sub(voteTokenBalance[_from]);
+            requestVotingRightsFrom(_from, remainder, _pollID);
+        }
+		
+
+        // make sure _from has enough voting rights
+        require(voteTokenBalance[_from] >= _numTokens);
+        // prevent user from committing to zero node placeholder
+        require(_pollID != 0);
+        // prevent user from committing a secretHash of 0
+        require(_secretHash != 0);
+
+		tokenAllowed[_from][msg.sender][_pollID] = tokenAllowed[_from][msg.sender][_pollID].sub(_numTokens);
+		
+		////////////////////
+		
+		// Check if _prevPollID exists in the user's DLL or if _prevPollID is 0
+        require(_prevPollID == 0 || dllMap[_from].contains(_prevPollID));
+
+        uint nextPollID = dllMap[_from].getNext(_prevPollID);
+
+        // edge case: in-place update
+        if (nextPollID == _pollID) {
+            nextPollID = dllMap[_from].getNext(_pollID);
+        }
+
+        require(validPosition(_prevPollID, nextPollID, _from, _numTokens));
+        dllMap[_from].insert(_prevPollID, _pollID, nextPollID);
+
+        bytes32 UUID = attrUUID(_from, _pollID);
+
+        store.setAttribute(UUID, "numTokens", _numTokens);
+        store.setAttribute(UUID, "commitHash", uint(_secretHash));
+
+        pollMap[_pollID].didCommit[msg.sender] = true;
+        emit _VoteCommitted(_pollID, _numTokens, msg.sender);
+    }	
 
     /**
     @notice                 Commits votes using hashes of choices and secret salts to conceal votes until reveal
@@ -263,6 +327,29 @@ contract PLCRVoting {
         return getNumTokens(_voter, _pollID);
     }
 
+	/**
+    @notice Approve the delegation of vote to a certain amount
+    @param _voter actual voter of the delegated tokens
+    @param _numTokens The number of tokens can be delegated to vote
+    @param _pollID The ID of the poll that the user approved the voter to vote on his behalf
+    */
+	
+	function approveDelegate(address _voter, uint _numTokens, uint _pollID) public {
+        tokenAllowed[msg.sender][_voter][_pollID] = _numTokens;
+
+        emit _TokensApproved(msg.sender, _voter, _numTokens, _pollID);
+    }
+	
+	/**
+    @notice get the allowed delegate amount 
+    @param _owner The owner of the tokens
+    @param _voter The actual voter of the delegated tokens
+    @param _pollID The ID of the poll that the user approved the voter to vote on his behalf
+    */
+    function allowanceDelegate(address _owner, address _voter, uint _pollID) public constant returns (uint _numTokens) {
+        return tokenAllowed[_owner][_voter][_pollID];
+    }
+	
     // ==================
     // POLLING INTERFACE:
     // ==================

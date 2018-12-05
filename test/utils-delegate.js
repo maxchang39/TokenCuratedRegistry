@@ -10,7 +10,7 @@ const fs = require('fs');
 const ethRPC = new EthRPC(new HttpProvider('http://localhost:7545'));
 const ethQuery = new Eth(new HttpProvider('http://localhost:7545'));
 
-const PLCRVoting = artifacts.require('PLCRVoting.sol');
+const PLCRVoting = artifacts.require('PLCRDVoting.sol');
 
 const Parameterizer = artifacts.require('Parameterizer.sol');
 const Registry = artifacts.require('Registry.sol');
@@ -175,6 +175,14 @@ const utils = {
 
     const prevPollID = await voting.getInsertPointForNumTokens.call(voter, tokensArg, pollID);
     await utils.as(voter, voting.commitVote, pollID, hash, tokensArg, prevPollID);
+  },
+  
+  commitVoteFrom: async (pollID, voteOption, tokensArg, salt, owner, voter, voting) => {
+    const hash = utils.getVoteSaltHash(voteOption, salt);
+    await utils.as(voter, voting.requestVotingRightsFrom, owner, tokensArg, pollID);
+
+    const prevPollID = await voting.getInsertPointForNumTokens.call(owner, tokensArg, pollID);
+    await utils.as(voter, voting.commitVoteFrom, pollID, owner, hash, tokensArg, prevPollID);
   },
 
   getReceiptValue: (receipt, arg) => receipt.logs[0].args[arg],

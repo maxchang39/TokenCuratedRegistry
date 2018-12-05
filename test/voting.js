@@ -41,7 +41,7 @@ contract('PLCRVoting', (accounts) => {
       const secondPollID = await utils.challengeAndGetPollID(secondDomain, challenger, registry);
       await utils.commitVote(firstPollID, 1, 7, 420, voter, voting);
       await utils.commitVote(secondPollID, 1, 8, 420, voter, voting);
-      await utils.commitVote(firstPollID, 1, 9, 420, voter, voting);
+      await utils.commitVote(firstPollID, 1, 7, 420, voter, voting);
       const insertPoint = await voting.getInsertPointForNumTokens.call(voter, 6, firstPollID);
       const expectedInsertPoint = 0;
 

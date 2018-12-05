@@ -38,7 +38,7 @@ Second cmd prompt
 * vagrant up
 * vagrant ssh
 * cd TokenCuratedRegistry/
-* ../../node_modules/.bin/solidity-coverage
+* truffle test test/delegate-voting.js
 
 # Test Coverage
 100% branch, 100% line

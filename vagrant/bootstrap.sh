@@ -10,7 +10,7 @@ DEBIAN_FRONTEND=noninteractive pip install --upgrade pip
 
 sudo npm install --unsafe-perm -g npm 
 sudo npm config set python python2.7
-sudo npm -g install --unsafe-perm truffle ganache-cli
+sudo npm -g install --unsafe-perm truffle ganache-cli@6.1.6
 sudo npm install --unsafe-perm truffle-hdwallet-provider
 sudo npm install --unsafe-perm solidity-coverage
 

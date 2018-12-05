@@ -1,7 +1,7 @@
 pragma solidity ^0.4.20;
 
-import "./plcr-revival/PLCRFactory.sol";
-import "./plcr-revival/PLCRVoting.sol";
+import "./plcr-delegate/PLCRDFactory.sol";
+import "./plcr-delegate/PLCRDVoting.sol";
 import "./Parameterizer.sol";
 import "./tokens/eip20/EIP20.sol";
 
@@ -9,12 +9,12 @@ contract ParameterizerFactory {
 
     event NewParameterizer(address creator, address token, address plcr, Parameterizer parameterizer);
 
-    PLCRFactory public plcrFactory;
+    PLCRDFactory public plcrFactory;
     ProxyFactory public proxyFactory;
     Parameterizer public canonizedParameterizer;
 
     /// @dev constructor deploys a new canonical Parameterizer contract and a proxyFactory.
-    constructor(PLCRFactory _plcrFactory) public {
+    constructor(PLCRDFactory _plcrFactory) public {
         plcrFactory = _plcrFactory;
         proxyFactory = plcrFactory.proxyFactory();
         canonizedParameterizer = new Parameterizer();
@@ -31,7 +31,7 @@ contract ParameterizerFactory {
         EIP20 _token,
         uint[] _parameters
     ) public returns (Parameterizer) {
-        PLCRVoting plcr = plcrFactory.newPLCRBYOToken(_token);
+        PLCRDVoting plcr = plcrFactory.newPLCRBYOToken(_token);
         Parameterizer parameterizer = Parameterizer(proxyFactory.createProxy(canonizedParameterizer, ""));
 
         parameterizer.init(
@@ -60,7 +60,7 @@ contract ParameterizerFactory {
     ) public returns (Parameterizer) {
         // Creates a new EIP20 token & transfers the supply to creator (msg.sender)
         // Deploys & initializes a new PLCRVoting contract
-        PLCRVoting plcr = plcrFactory.newPLCRWithToken(_supply, _name, _decimals, _symbol);
+        PLCRDVoting plcr = plcrFactory.newPLCRWithToken(_supply, _name, _decimals, _symbol);
         EIP20 token = EIP20(plcr.token());
         token.transfer(msg.sender, _supply);
 

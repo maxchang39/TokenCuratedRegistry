@@ -3,7 +3,7 @@ pragma solidity ^0.4.11;
 // These are useless imports, but they force these contracts to be compiled. We need their build
 // files for the test pipeline.
 import "./tokens/eip20/EIP20.sol";
-// import "./plcr-revival/PLCRFactory.sol";
+// import "./plcr-revival/PLCRDFactory.sol";
 
 contract Migrations {
   address public owner;
